@@ -398,7 +398,7 @@ get "/genome/:id/feature/:fid" => sub {
  	my $id  = params->{id};
 	my $fid = params->{fid};	
  	return forward "/genome/$id/feature" , { "fid" => $fid } ;
- };
+};
     
 get "/genome/:id/feature/" => sub {
 	my $id = params->{id};	
@@ -446,7 +446,7 @@ get "/genome/:id/feature" => sub {
 		my $ids = [] ;
 		map { push @$ids , $_->[2]->{id} } @$res ;
 	
-		# get data sequences
+		# get  sequences
 	 	my $seq_list = query([ $ids , [ "id" , "feature-type"], ["from-link" , "to-link"], ["id" , "sequence"] ], 
 		"get_relationship", "Produces");
 		
@@ -534,7 +534,7 @@ get "/genome/:id/feature" => sub {
 			$obj->{genome} = { id => $id  ,
 							   url => $base_url . "/genome/" . $triple->[0]->{id} ,
 							};	
-			$obj->{url} = $base_url . "/genome/$id/feature" ;
+			$obj->{url} = $base_url . "/genome/$id/feature/$fid" ;
 			$obj->{sequence} = $feature2seq->{$fid} ;
 			$obj->{functional_roles} = $feature2role->{$fid} || [] ;
 			
@@ -555,7 +555,6 @@ get "/genome/:id/feature" => sub {
 
  headers 'Content-Type' => 'application/json';
  return to_json \%return ;	
-
 };
 
 
@@ -563,7 +562,7 @@ get "/genome/:id/feature" => sub {
 get "/subsystem/:id" => sub {
  	my $id  = params->{id};	
  	return forward "/subsystem" , { "id" => $id } ;
- };
+};
 
 get "/subsystem" => sub {
  
@@ -640,8 +639,7 @@ get "/subsystem" => sub {
      headers 'Content-Type' => 'application/json';
      return to_json \%return ;	
 	
- };
-
+};
 
 
 
@@ -669,35 +667,35 @@ get "/subsystem" => sub {
  	return "HALLO"
  };
 
- su get_feature{
+sub get_feature{
 	 my ($ids , $type ) = @_ ;
 	 
 	 # type of $ids is one of feature , genome , subsystem , role   
 
 	 print STDERR Dumper $ids , $type ;
 	 
-	 
-	 id	string	Unique identifier for this Feature.
-	 feature-type	string	Code indicating the type of this feature. Among the codes currently supported are "peg" for a protein encoding gene, "bs" for a binding site, "opr" for an operon, and so forth.
-	 source-id	string	ID for this feature in its original source (core) database
-	 sequence-length	counter	Number of base pairs in this feature.
-	 function	text	Functional assignment for this feature. This will often indicate the feature's functional role or roles, and may also have comments.
-	 alias
+	 	 #
+	 # id	string	Unique identifier for this Feature.
+	 # feature-type	string	Code indicating the type of this feature. Among the codes currently supported are "peg" for a protein encoding gene, "bs" for a binding site, "opr" for an operon, and so forth.
+	 # source-id	string	ID for this feature in its original source (core) database
+	 # sequence-length	counter	Number of base pairs in this feature.
+	 # function	text	Functional assignment for this feature. This will often indicate the feature's functional role or roles, and may also have comments.
+	 # alias
 	 
 	 # template for role structure
 	 my $template = {	
-						id   			=> '' ,
-						url  			=> '$base_url . "/role' ,
-						function 		=> '',
-						alias     		=> '',
-						feature-type 	=> '' ,
-						source-id 		=> '' ,
-						sequence-length => '' ,
-						sequence        => {
-							dna 	=> '' ,
-							protein => '',
+						'id'   				=> '' ,
+						'url'  				=> '$base_url . "/role' ,
+						'function' 			=> '',
+						'alias'     		=> '',
+						'feature_type' 		=> '' ,
+						'source_id' 		=> '' ,
+						'sequence_length' 	=> '' ,
+						'sequence'        	=> {
+							'dna' 		=> '' ,
+							'protein' 	=> '',
 						},
-						links 			=> [ { rel => 'self' , href => $base_url . "/feature" } ] , 
+						'links' 			=> [ { rel => 'self' , href => $base_url . "/feature" } ] , 
 							
 					};
 				
@@ -708,13 +706,93 @@ get "/subsystem" => sub {
 	# type organism -> relationship IsOwnerOf
 	# type role     -> relationship IsFunctionalIn
 	
+	if ($type eq 'role'){
+		# get features for role
+		
+		
+		my $feature_list = query([ $ids , [ 'id'] , [ ] , ['id','feature-type' , 'source-id' , 'sequence-length' , 'function' , 'alias'] ], 
+	 	"get_relationship", "IsFunctionalIn" );
+		
+		foreach my $res ( @$feature_list ) {
+			
+			# collect all feature IDs and retrieve sequences
+			my $fids = [] ;
+			map { push @$fids , $_->[2]->{id} } @$res ;
+			my $id2seq = &get_sequence($fids , 'feature');
+			
+			# Create feature
+ 			foreach my $triple (@$res) {
+				print STDERR Dumper $triple ;
+				
+				my $feature = {} ;
+				%$feature = %$template ;
+				
+				# feature and role ID
+				my $fid = $triple->[2]->{id} ;
+				my $rid = $triple->[0]->{id} ;
+				
+				$feature->{id}  = $fid ;
+				my ($oid) = $fid =~ /(kb\|g\.\d+)/ ;
+				$feature->{url} = $base_url . "/genome/$oid/feature/$fid" ;
+				
+				$feature->{'feature_type'} 	= $triple->[2]->{'feature_type'} ;
+				$feature->{'source_id'} 	= $triple->[2]->{'source_id'} ;
+				$feature->{'function'}		= $triple->[2]->{'function'} ;
+				$feature->{'alias'} 		= $triple->[2]->{'alias'};
+				$feature->{'sequence'} 		= $id2seq->{$fid} ;
+				$feature->{'sequence_length'} = $triple->[2]->{'alias'};
+				
+				push @$list , $feature ;
+				
+			}
+		}
+			
+		
+	}
+	else{
+		return ['not implemented'] ;
+	}
 	
- }
+	return $list ;
+}
 
- sub get_role{
+
+sub get_sequence{
+	my ($ids , $type) = @_;
+	my $list = [] ;
+	
+	# get sequences for Features
+	
+ 	my $seq_list = query([ $ids , [ "id" , "feature-type"], ["from-link" , "to-link"], ["id" , "sequence"] ], 
+	"get_relationship", "Produces");
+	
+	my $id2seq = {};	
+	foreach my $res ( @$seq_list ) {
+		foreach my $triple (@$res) {
+			# print STDERR Dumper $triple ;
+	
+			# feature ID
+			my $fid = $triple->[0]->{id} ;
+			
+			
+			$id2seq->{ $fid } = { "feature-type" => [] ,
+			 							"md5" => $triple->[2]->{"id"} ,
+										"sequence" => $triple->[2]->{"sequence"},
+												 } ;
+			push @{ $id2seq->{ $fid }->{"feature-type"} } ,  $triple->[0]->{"feature_type"} ;
+			 									 
+		}
+	}
+	
+	return $id2seq ;
+}
+
+sub get_role{
 	 my ($ids , $type , $subsystem) = @_ ;
 	 
 
+	 error "ERROR: not a reference $ids" unless (ref $ids) ;
+	 
 	 print STDERR Dumper $ids , $type ;
 	 
 	 # template for role structure
@@ -774,8 +852,9 @@ get "/subsystem" => sub {
 					$role->{url}			= $base_url . "subsystem/$sid/role/$rid" ;
 					$role->{links} 			= { 
 												rel => 'self' ,
-									 		   	href => $base_url . "subsystem/$sid/role/$rid" , 
+									 		   	href => $base_url . "/subsystem/$sid/role/$rid" , 
 											}; 
+					$role->{features}		= &get_feature( [$rid] , 'role' );
 					 
 					 
 					push @{ $list } , $role ;
@@ -812,6 +891,7 @@ get "/subsystem" => sub {
 																		rel => 'self' ,
 															 		   	href => $base_url . "subsystem/$sid/role/$rid" , 
 																	};
+											$role->{features}		= &get_role( $rid , 'role' );						
 					 
 					push @{ $list } , $role ;
 				}
@@ -831,7 +911,7 @@ get "/subsystem" => sub {
 	}
 	
 	 return $list , $error ;
- }
+}
 
 sub query {
   my ($params, $entity, $name, $verbose) = @_;
@@ -845,7 +925,7 @@ sub query {
 
   my $response = $ua->post($cdmi_url, Content => $json->encode($data))->content;
 
-  # print STDERR Dumper $response	;	
+  print STDERR Dumper $response	;	
   eval {
     $response = $json->decode($response);
   };
