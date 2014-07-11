@@ -32,8 +32,8 @@ my $options = GetOptions(
     "api"     => \$api_url,
     "conf=s"  => \$conf,
     "help"    => \$help,
-	"verbose" => \$verbose,
-	"dir"     => \$dir ,
+    "verbose" => \$verbose,
+    "dir=s"   => \$dir ,
 );
 
 if ($help) {
@@ -57,6 +57,7 @@ if (-d $dir){
 }
 else{
 	print STDERR "No such file or directory $dir\n";
+	exit ;
 }
 
 # get genomes and sequences
@@ -98,10 +99,10 @@ while ($genome_list_url) {
 				
 				if ( $feature->{feature_type} eq "CDS" ){
 					print join( "\t", $feature->{id},  ($feature->{function} || $feature->{role}) , 
-														$genome->{scientific_name} , $feature->{sequnce}->{sequence} ) , "\n"
+														$genome->{scientific_name} , $feature->{sequence}->{sequence} ) , "\n"
 					                  if ( $verbose );
 				
-					print ID2SEQ join( "\t", $feature->{id},  ($feature->{function} || $feature->{role}) , $genome->{scientific_name} , $feature->{sequnce}->{sequence} ), "\n"
+					print ID2SEQ join( "\t", $feature->{id},  ($feature->{function} || $feature->{role}) , $genome->{scientific_name} , $feature->{sequence}->{sequence} ), "\n"
 					  
 									  
 				}
