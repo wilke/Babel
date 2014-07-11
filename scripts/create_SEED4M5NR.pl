@@ -98,11 +98,11 @@ while ($genome_list_url) {
             foreach my $feature ( @{ $res->{data} } ) {
 				
 				if ( $feature->{feature_type} eq "CDS" ){
-					print join( "\t", $feature->{id},  ($feature->{function} || $feature->{role}) , 
+					print join( "\t", $feature->{id},  ($feature->{function} || $feature->{role} || '') , 
 														$genome->{scientific_name} , $feature->{sequence}->{sequence} ) , "\n"
 					                  if ( $verbose );
 				
-					print ID2SEQ join( "\t", $feature->{id},  ($feature->{function} || $feature->{role}) , $genome->{scientific_name} , $feature->{sequence}->{sequence} ), "\n"
+					print ID2SEQ join( "\t", $feature->{id},  ($feature->{function} || $feature->{role} || '') , $genome->{scientific_name} , $feature->{sequence}->{sequence} ), "\n"
 					  
 									  
 				}
