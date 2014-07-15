@@ -22,6 +22,11 @@ $ua->agent("MyClientAW/0.1 ");
 
 my $json = new JSON;
 
+
+my $enable = 1 ;
+$json = $json->convert_blessed([$enable]);
+my $enabled = $json->get_convert_blessed;
+
 my $list_block = {
 	'next' => '',
 	'previous' => '',
@@ -32,7 +37,6 @@ my $list_block = {
 	'limit' => '' ,
 	'offset' => ''
 } ;		
-
 
 
 # Define routes/resources
@@ -308,7 +312,7 @@ get "/sequence" => sub {
 
 
 
-	my %return = %$list_block ;
+	my %return = %{$list_block} ;
  	foreach my $struct ( @$list ) {
  		foreach my $id (keys %$struct) {
  			my $obj = $struct->{$id} ;
@@ -323,7 +327,7 @@ get "/sequence" => sub {
      headers 'Content-Type' => 'application/json';
      return to_json \%return ;	
 	
- };
+};
 
 
 get "/relationship/:id" => sub {
@@ -341,7 +345,7 @@ get "/relationship/:id" => sub {
 
  	#print STDERR Dumper $list ;
 
- 	my %return = %$list_block ;
+ 	my %return = %{$list_block} ;
  	foreach my $res ( @$list ) {
 	
 		# create list of feature IDs for protein sequence query
@@ -391,7 +395,7 @@ get "/relationship/:id" => sub {
   headers 'Content-Type' => 'application/json';
   return to_json \%return ;	
 
- };
+};
 
 # Features for a genome
 get "/genome/:id/feature/:fid" => sub {
@@ -412,12 +416,6 @@ get "/genome/:id/feature" => sub {
 
 	my ($fid) = $options->{fid} || undef;
 
-	# my $list = query([ $id , [
-#              							"from_link",
-#              						   	"to_link",
-# 			 						  ],
-# 									  ], "get_relationship", "IsOwnedBy");
-
 
 	# TODO
 	if ($fid) {
@@ -436,9 +434,23 @@ get "/genome/:id/feature" => sub {
 
 	#print STDERR Dumper $list ;
 
-	my %return = %$list_block ;
-	foreach my $res ( @$list ) {
+
+	my $return = new Data::Response::List ;
+	#my %return =%{$list_block};
 	
+	# my %return = (
+# 		'next' => '',
+# 		'previous' => '',
+# 		'data' => [] ,
+# 		'total_count' => '',
+# 		'order' => '' ,
+# 		'url' => '',
+# 		'limit' => '' ,
+# 		'offset' => ''
+# 		);
+	
+	foreach my $res ( @$list ) {
+		debug "Features:\t" . scalar @$res ;
 	
 	
 		# create list of feature IDs for protein sequence query
@@ -507,7 +519,6 @@ get "/genome/:id/feature" => sub {
 	# 	cluster-based	boolean	TRUE if this is a clustering-based subsystem, else FALSE. A clustering-based subsystem is one in which there is functional-coupling evidence that genes belong together, but we do not yet know what they do.
 	# 	experimental	boolean	TRUE if this is an experimental subsystem, else FALSE. An experimental subsystem is designed for investigation and is not yet ready to be used in comparative analysis and annotation.
 	
-	# print STDERR Dumper $ss_list ;
 	
 		my $role2subsystems = {};	
 		foreach my $res ( @$ss_list ) {
@@ -526,6 +537,8 @@ get "/genome/:id/feature" => sub {
 	
 	
 		# construct return 
+		my $counter = 0 ;
+		debug "Features before loop:\t" . scalar @{ $return->{data} } ;
 		foreach my $triple (@$res) {
 			
 			my $fid = $triple->[2]->{id} ;
@@ -548,13 +561,18 @@ get "/genome/:id/feature" => sub {
 			
 			
 			# $return = $obj ;
-			push @{ $return{data} } , $obj ;
+			$counter++ ;
+			push @{ $return->{data} } , $obj ;
 		}
+		debug "Counter:\t$counter" ;
+		debug "Features in loop:\t" . scalar @{ $return->{data} } ;
 	}
 
 
+	debug "Total features in response:\t" . scalar @{ $return->{data} } ;
+
  headers 'Content-Type' => 'application/json';
- return to_json \%return ;	
+ return $return->to_json ;	
 };
 
 
@@ -623,7 +641,7 @@ get "/subsystem" => sub {
 		 "all_entities", "Subsystem" );
 
 
-		 %return = %$list_block ;
+		 %return = %{$list_block} ;
  		 foreach my $struct ( @$list ) {
  			 foreach my $id (keys %$struct) {
  				 my $obj = $struct->{$id} ;
@@ -672,7 +690,7 @@ sub get_feature{
 	 
 	 # type of $ids is one of feature , genome , subsystem , role   
 
-	 # print STDERR Dumper $ids , $type ;
+	 debug Dumper $ids , $type ;
 	 
 	 	 #
 	 # id	string	Unique identifier for this Feature.
@@ -793,7 +811,7 @@ sub get_role{
 
 	 error "ERROR: not a reference $ids" unless (ref $ids) ;
 	 
-	 # print STDERR Dumper $ids , $type ;
+	 debug Dumper $ids , $type ;
 	 
 	 # template for role structure
 	 my $template = {	
@@ -809,7 +827,7 @@ sub get_role{
 	 
 	 	 # type of ID can be either 'role' or 'subsystem'
 	 unless ( $type eq 'role' or 'subsystem'){
-		 print STDERR "Error: Invalid value for parameter type in function get_rols (type=".($type || 'undef').").\n";
+		 error "Error: Invalid value for parameter type in function get_rols (type=".($type || 'undef').").\n";
 		 return $template , $error ;
 	 }
 	 
@@ -837,7 +855,8 @@ sub get_role{
 	
 			foreach my $res ( @$role_list ) {
 	 			foreach my $triple (@$res) {
-					# print STDERR Dumper $triple ;
+					# debug STDERR Dumper $triple ;
+
 					# role ID
 					my $rid = $triple->[2]->{id} ;
 					my $sid = $triple->[0]->{id} ;
@@ -941,3 +960,36 @@ sub query {
 }
 
 true;
+
+package Data::Response::List ;
+
+use Data::Dumper;
+use JSON;
+
+my $json = new JSON ;
+
+sub new {
+	my ($class) = @_ ;
+	my $list_struct = {
+	'next' => '',
+	'previous' => '',
+	'data' => [] ,
+	'total_count' => '',
+	'order' => '' ,
+	'url' => '',
+	'limit' => '' ,
+	'offset' => ''
+};
+	return bless $list_struct ;
+}
+
+sub to_json{
+	my ($self) = @_ ;
+	
+	my %hash = %$self;
+	
+	return $json->encode(\%hash) ;
+}
+
+
+1;
