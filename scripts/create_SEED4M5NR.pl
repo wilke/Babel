@@ -85,6 +85,8 @@ while ($genome_list_url) {
         my $genome_feature_url = $genome->{url} . "/feature";
 
         while ($genome_feature_url) {
+
+	    print STDERR "URL:\t$genome_feature_url\n";
             my $get = $ua->get($genome_feature_url);
 
             # check response status
@@ -96,7 +98,9 @@ while ($genome_list_url) {
             my $res = $json->decode( $get->content );
             $genome_feature_url = $res->{next};
 
+
 			print STDERR "Features: " . scalar @{ $res->{data}) , "\n";
+
 
             foreach my $feature ( @{ $res->{data} } ) {
 				
