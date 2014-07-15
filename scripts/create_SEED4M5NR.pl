@@ -99,7 +99,7 @@ while ($genome_list_url) {
             $genome_feature_url = $res->{next};
 
 
-			print STDERR "Features: " . scalar @{ $res->{data}) , "\n";
+			print STDERR "Features: " . scalar @{ $res->{data} } , "\n";
 
 
             foreach my $feature ( @{ $res->{data} } ) {
