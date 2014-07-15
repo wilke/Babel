@@ -355,7 +355,7 @@ get "/relationship/:id" => sub {
 		my $feature2seq = {};	
 		foreach my $res ( @$seq_list ) {
  			foreach my $triple (@$res) {
-				print STDERR Dumper $triple ;
+				# print STDERR Dumper $triple ;
 				# feature ID
 				my $fid = $triple->[0]->{id} ;
 				
@@ -507,12 +507,12 @@ get "/genome/:id/feature" => sub {
 	# 	cluster-based	boolean	TRUE if this is a clustering-based subsystem, else FALSE. A clustering-based subsystem is one in which there is functional-coupling evidence that genes belong together, but we do not yet know what they do.
 	# 	experimental	boolean	TRUE if this is an experimental subsystem, else FALSE. An experimental subsystem is designed for investigation and is not yet ready to be used in comparative analysis and annotation.
 	
-	print STDERR Dumper $ss_list ;
+	# print STDERR Dumper $ss_list ;
 	
 		my $role2subsystems = {};	
 		foreach my $res ( @$ss_list ) {
  			foreach my $triple (@$res) {
-				print STDERR Dumper $triple ;
+				# print STDERR Dumper $triple ;
 				# feature ID
 				my $role = $triple->[0]->{id} ;
 				push @{ $role2subsystems->{ $role } } , $triple->[2] ;
@@ -672,7 +672,7 @@ sub get_feature{
 	 
 	 # type of $ids is one of feature , genome , subsystem , role   
 
-	 print STDERR Dumper $ids , $type ;
+	 # print STDERR Dumper $ids , $type ;
 	 
 	 	 #
 	 # id	string	Unique identifier for this Feature.
@@ -722,7 +722,7 @@ sub get_feature{
 			
 			# Create feature
  			foreach my $triple (@$res) {
-				print STDERR Dumper $triple ;
+				# print STDERR Dumper $triple ;
 				
 				my $feature = {} ;
 				%$feature = %$template ;
@@ -793,7 +793,7 @@ sub get_role{
 
 	 error "ERROR: not a reference $ids" unless (ref $ids) ;
 	 
-	 print STDERR Dumper $ids , $type ;
+	 # print STDERR Dumper $ids , $type ;
 	 
 	 # template for role structure
 	 my $template = {	
@@ -833,11 +833,11 @@ sub get_role{
 				'from-link' , 'to-link' , 'sequence' , 'abbreviation' , 'auxiliary'] , ['id','hypothetical'] ], 
 		 	"get_relationship", "Includes" );
 		
-			debug Dumper $role_list ;
+			# debug Dumper $role_list ;
 	
 			foreach my $res ( @$role_list ) {
 	 			foreach my $triple (@$res) {
-					print STDERR Dumper $triple ;
+					# print STDERR Dumper $triple ;
 					# role ID
 					my $rid = $triple->[2]->{id} ;
 					my $sid = $triple->[0]->{id} ;
@@ -872,7 +872,7 @@ sub get_role{
 			
 			foreach my $res ( @$role_list ) {
 	 			foreach my $triple (@$res) {
-					print STDERR Dumper $triple ;
+					# print STDERR Dumper $triple ;
 					# role ID
 					my $rid = $triple->[1]->{id} ;
 					my $sid = $triple->[2]->{id} ;
@@ -921,11 +921,11 @@ sub query {
 	       'version' => "1.1" };
 
 
-  print STDERR Dumper $data ;
+  # print STDERR Dumper $data ;
 
   my $response = $ua->post($cdmi_url, Content => $json->encode($data))->content;
 
-  print STDERR Dumper $response	;	
+  # print STDERR Dumper $response	;	
   eval {
     $response = $json->decode($response);
   };
