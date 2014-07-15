@@ -78,6 +78,7 @@ while ($genome_list_url) {
     my $res = $json->decode( $get->content );
 
     $genome_list_url = $res->{next};
+	
     foreach my $genome ( @{ $res->{data} } ) {
 
         # url for all genome features
@@ -94,6 +95,8 @@ while ($genome_list_url) {
 
             my $res = $json->decode( $get->content );
             $genome_feature_url = $res->{next};
+
+			print STDERR "Features: " . scalar @{ $res->{data}) , "\n";
 
             foreach my $feature ( @{ $res->{data} } ) {
 				
