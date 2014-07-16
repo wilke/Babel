@@ -24,7 +24,7 @@ my $api_url     = "http://0.0.0.0:3000";
 my $conf        = "Babel.ini";
 my $client_name = "Babel CLient 0.1";
 my $help        = 0;
-my $limit       = 100;
+my $limit       = 1000;
 my $verbose     = 0 ;
 my $dir         = ".";
 
@@ -78,6 +78,9 @@ while ($genome_list_url) {
     my $res = $json->decode( $get->content );
 
     $genome_list_url = $res->{next};
+	
+	print $genome_list_url , "\n" ;
+	next;
 	
     foreach my $genome ( @{ $res->{data} } ) {
 

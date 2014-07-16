@@ -142,7 +142,7 @@ get "/genome" => sub {
 
     my $list_block = {
     	'next' => '',
-		'previous' => '',
+		'prev' => '',
 		'data' => [] ,
 		'total_count' => '',
 		'order' => '' ,
@@ -169,12 +169,23 @@ get "/genome" => sub {
 
 	my $options = params ;
 	
+	$list_block->{url}   = $base_url . "/genome" ;
+	$list_block->{order} = $options->{order} || '' ;
+	
 	if (keys %$options) {
+		
+		debug "offset:\t". ( $options->{offset} || 'default' ) ;
+		debug "limit:\t". $options->{limit} ;
 		
 		my $offset = $options->{offset} || "0" ;
 		my $limit  = $options->{limit}  || $default_limit ;
 		
 		my $return = $list_block ;
+		
+		# current url
+		my $uopt = join "&" , (map { $_ . "=" . $options->{$_} } keys %{$options}) ;
+		debug $uopt ;
+		$return->{url}   = $base_url . "/genome?$uopt"  ;
 		
 		my $list = query([ $offset , $limit , [ 
 			"id" , "pegs" , "rnas" , "scientific-name" , "complete" , "prokaryotic" , "dna-size" , "contigs" ,
@@ -188,16 +199,17 @@ get "/genome" => sub {
 			
 			my $noffset = $offset + $limit ;
 			my %noptions = %$options ;
-			$noptions{next} = $noffset ;
+			$noptions{offset} = $noffset ;
+			$noptions{limit} = $limit ;
 			
 			my $opt = join "&" , (map { $_ . "=" . $noptions{$_} } keys %noptions) ;
-			$return->{next}   = $base_url . "/genome?$opt" ;
+			$return->{next}   = $base_url . "/genome?$opt"  if (scalar keys %{ $list->[0] } ge $limit);
 			
 			
 			my $poffset = $offset - $limit ;
 			if ($poffset ge 0 ) { 
 				my %poptions = %$options ;
-				$poptions{prev} = $poffset;
+				$poptions{offset} = $poffset;
 				
 				my $opt = join "&" , (map { $_ . "=" . $poptions{$_} } keys %poptions) ;
 				$return->{prev}   = $base_url . "/genome?$opt" ;
